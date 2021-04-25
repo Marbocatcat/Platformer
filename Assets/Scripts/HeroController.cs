@@ -20,15 +20,21 @@ public class HeroController : MonoBehaviour
     private bool isMoving;
     private bool isGrounded;
     private bool isFalling;
+    private bool isFacingRight = true;
+
+    float xHorizontal;
 
     Animator animator;
     Rigidbody2D heroBody2D;
+    SpriteRenderer spriteRenderer;
     Vector3 baseScale;
+   
 
     void Start()
     {
         animator = GetComponent<Animator>();
         heroBody2D = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         baseScale = transform.localScale;
     }
 
@@ -40,9 +46,10 @@ public class HeroController : MonoBehaviour
         animationControl();
         checkIfFalling();
         checkObjectinFront();
-        handleDirection(baseScale);
+        handleDirection();
 
-        Debug.Log(isTouchingWall);
+
+        Debug.Log(xHorizontal);
     }
 
     private void FixedUpdate()
@@ -53,7 +60,8 @@ public class HeroController : MonoBehaviour
 
     void handleMovement()
     {
-        heroBody2D.velocity = new Vector2(Input.GetAxisRaw("Horizontal") * speed, heroBody2D.velocity.y);
+        xHorizontal = Input.GetAxisRaw("Horizontal");
+        heroBody2D.velocity = new Vector2( xHorizontal * speed, heroBody2D.velocity.y);
     }
     void handleJumping()
     {
@@ -62,10 +70,30 @@ public class HeroController : MonoBehaviour
             heroBody2D.AddForce(new Vector2(heroBody2D.velocity.x, jumpForce), ForceMode2D.Impulse);
             canJump = false;
         }
+        else if(canJump && checkObjectinFront())
+        {
+            heroBody2D.AddForce(new Vector2(heroBody2D.velocity.x, jumpForce), ForceMode2D.Impulse);
+            canJump = false;
+        }
         
     }
     void animationControl()
     {
+
+
+        if (isMoving && isGrounded && !isTouchingWall)
+        {
+            animator.Play("hero_run");
+        }
+        else if(isGrounded && isTouchingWall && isMoving)
+        {
+            animator.Play("hero_push");
+        }
+        else if(isGrounded && !isMoving)
+        {
+            animator.Play("hero_idle");
+        }
+        /*
         if (isMoving && isGrounded && !isTouchingWall)
         {
             animator.Play("hero_run");
@@ -74,7 +102,7 @@ public class HeroController : MonoBehaviour
         {
             animator.Play("hero_idle");
         }
-        else if(isTouchingWall && isGrounded)
+        else if(isTouchingWall && isGrounded && isMoving)
         {
             animator.Play("hero_push");
         }
@@ -86,26 +114,25 @@ public class HeroController : MonoBehaviour
         {
             animator.Play("hero_jump");
         }
+        */
     }
-    void handleDirection(Vector3 oldbaseScale)
+    void handleDirection()
     {
-        Vector3 newBaseScale = oldbaseScale;
-        float velocity = heroBody2D.velocity.x;
-        isMoving = false;
-
-        if (velocity < -0.1)
+        if (xHorizontal < 0 && !isFacingRight)
         {
-            newBaseScale.x = -oldbaseScale.x;
+            flip();
             isMoving = true;
         }
-        else if (velocity > 0.1)
+        else if (xHorizontal > 0 && isFacingRight)
         {
-            newBaseScale.x = oldbaseScale.x;
+            flip();
             isMoving = true;
+            
         }
-      
-
-        transform.localScale = newBaseScale;
+        else
+        {
+            isMoving = false;
+        }
     }
     void checkIfFalling()
     {
@@ -125,8 +152,9 @@ public class HeroController : MonoBehaviour
     void groundCheck()
     {
         RaycastHit2D groundLineCast = Physics2D.Linecast(transform.position, groundCheckPlaceholder.position, 1 << LayerMask.NameToLayer("Ground"));
+        RaycastHit2D stoneLineCast = Physics2D.Linecast(transform.position, groundCheckPlaceholder.position, 1 << LayerMask.NameToLayer("Stone"));
 
-        if(groundLineCast)
+        if (groundLineCast || stoneLineCast)
         {
             isGrounded = true;
         }
@@ -143,16 +171,28 @@ public class HeroController : MonoBehaviour
         {
             canJump = true;
         }
+        else if(Input.GetButtonUp("Jump") && heroBody2D.velocity.y > 0)
+        {
+            heroBody2D.velocity = new Vector2(heroBody2D.velocity.x, heroBody2D.velocity.y * .5f); // half jump
+        }
     }
-    void checkObjectinFront()
+
+    bool checkObjectinFront()
     {
         isTouchingWall = Physics2D.OverlapBox(wallCheck.position, wallCheckSize, 0, wallLayer); // makes a box that will check whats in front
 
+        return isTouchingWall;
+    }
+
+    void flip()
+    {
+        isFacingRight = !isFacingRight;
+        transform.Rotate(0, 180 , 0);
     }
 
 
     private void OnDrawGizmosSelected()
     {
-        Gizmos.DrawCube( wallCheck.position, wallCheckSize);
+        Gizmos.DrawCube(wallCheck.position, wallCheckSize);
     }
 }
