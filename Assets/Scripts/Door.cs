@@ -7,6 +7,7 @@ public class Door : MonoBehaviour
 
 
     Animator animator;
+    Door theDoor;
     SpriteRenderer spriteRenderer;
     new BoxCollider2D collider2D;
 
@@ -18,6 +19,7 @@ public class Door : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         collider2D = GetComponent<BoxCollider2D>();
         animator = GetComponent<Animator>();
+        theDoor = GetComponent<Door>();
     }
 
     // Update is called once per frame
@@ -39,7 +41,7 @@ public class Door : MonoBehaviour
         {
             animator.Play("door_closed");
             collider2D.isTrigger = false;
-          
+            
         }
     }
 

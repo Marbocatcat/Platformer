@@ -30,7 +30,6 @@ public class Button : MonoBehaviour
         doorSwitch();
     }
 
-
     void doorSwitch()
     {
 

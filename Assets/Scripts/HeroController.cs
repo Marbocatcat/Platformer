@@ -20,119 +20,126 @@ public class HeroController : MonoBehaviour
     private bool isMoving;
     private bool isGrounded;
     private bool isFalling;
-    private bool isFacingRight = true;
+    private bool isFacingRight = false;
 
+    [Header("Attack Check")]
+    [SerializeField] BoxCollider2D attackCollider;
+
+    [Header("Wall Jump")]
+    [SerializeField] float wallJumpTime;
+    [SerializeField] float wallSlideSpeed;
+    private float jumpTime;
+    private bool isWallSliding = false;
+    private bool isAttacking;
     float xHorizontal;
 
     Animator animator;
     Rigidbody2D heroBody2D;
     SpriteRenderer spriteRenderer;
     Vector3 baseScale;
-   
 
-    void Start()
+
+    void handleSwordAttack()
     {
-        animator = GetComponent<Animator>();
-        heroBody2D = GetComponent<Rigidbody2D>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
-        baseScale = transform.localScale;
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        jumpCheck();
-        groundCheck();
-        animationControl();
-        checkIfFalling();
-        checkObjectinFront();
-        handleDirection();
-
-
-        Debug.Log(xHorizontal);
-    }
-
-    private void FixedUpdate()
-    {
-        handleMovement();
-        handleJumping();
-    }
-
-    void handleMovement()
-    {
-        xHorizontal = Input.GetAxisRaw("Horizontal");
-        heroBody2D.velocity = new Vector2( xHorizontal * speed, heroBody2D.velocity.y);
-    }
-    void handleJumping()
-    {
-        if (canJump && isGrounded) // if i can jump, not on the ground , and not falling then I can jump.
+        if (Input.GetKeyDown("mouse 0"))
         {
-            heroBody2D.AddForce(new Vector2(heroBody2D.velocity.x, jumpForce), ForceMode2D.Impulse);
-            canJump = false;
-        }
-        else if(canJump && checkObjectinFront())
-        {
-            heroBody2D.AddForce(new Vector2(heroBody2D.velocity.x, jumpForce), ForceMode2D.Impulse);
-            canJump = false;
+            isAttacking = true;
+            attackCollider.enabled = true;
         }
         
     }
-    void animationControl()
+    void handleMovement()
     {
+        xHorizontal = Input.GetAxisRaw("Horizontal");
+        heroBody2D.velocity = new Vector2(xHorizontal * speed, heroBody2D.velocity.y);
 
-
-        if (isMoving && isGrounded && !isTouchingWall)
+        if(xHorizontal != 0)
         {
-            animator.Play("hero_run");
-        }
-        else if(isGrounded && isTouchingWall && isMoving)
-        {
-            animator.Play("hero_push");
-        }
-        else if(isGrounded && !isMoving)
-        {
-            animator.Play("hero_idle");
-        }
-        /*
-        if (isMoving && isGrounded && !isTouchingWall)
-        {
-            animator.Play("hero_run");
-        }
-        else if(!isMoving && isGrounded)
-        {
-            animator.Play("hero_idle");
-        }
-        else if(isTouchingWall && isGrounded && isMoving)
-        {
-            animator.Play("hero_push");
-        }
-        else if (isFalling && !isGrounded)
-        {
-            animator.Play("hero_falling");
-        }
-        else if (isJumping)
-        {
-            animator.Play("hero_jump");
-        }
-        */
-    }
-    void handleDirection()
-    {
-        if (xHorizontal < 0 && !isFacingRight)
-        {
-            flip();
             isMoving = true;
         }
-        else if (xHorizontal > 0 && isFacingRight)
-        {
-            flip();
-            isMoving = true;
-            
-        }
-        else
+        else if(xHorizontal == 0)
         {
             isMoving = false;
         }
+
+
+    }
+    void handleJumping()
+    {
+        if (canJump && isGrounded || isWallSliding && canJump) // if i can jump, not on the ground , and not falling then I can jump.
+        {
+            heroBody2D.AddForce(new Vector2(heroBody2D.velocity.x, jumpForce), ForceMode2D.Impulse);
+            canJump = false;
+
+        }
+
+
+    }
+    IEnumerator resetSwordAttack()
+    {
+        yield return new WaitForSeconds(.1f);
+        isAttacking = false;
+        attackCollider.enabled = false;
+
+    }
+    void animationControl()
+    {
+        if (isMoving && isGrounded && !isAttacking)
+        {
+            if (isTouchingWall)
+            {
+                animator.Play("hero_push");
+            }
+            else
+            {
+                animator.Play("hero_run");
+            }
+        }
+        if (isAttacking)
+        {
+            animator.Play("hero_sword_attack");
+            StartCoroutine("resetSwordAttack");
+        }
+
+        if (!isMoving && isGrounded && !isAttacking)
+        {
+            animator.Play("hero_idle");
+        }
+
+
+        if (!isGrounded && !isWallSliding)
+        {
+            if (isJumping && !isAttacking)
+            {
+                animator.Play("hero_jump");
+            }
+            else if (isFalling && !isAttacking)
+            {
+                animator.Play("hero_falling");
+            }
+        }
+
+        if (isWallSliding)
+        {
+            animator.Play("hero_idle");
+        }
+    }
+    void handleDirection()
+    {
+        if (xHorizontal > 0 && !isFacingRight)
+        {
+            flip();
+        }
+        else if (xHorizontal < 0 && isFacingRight)
+        {
+            flip();
+        }
+    }
+
+    void flip()
+    {
+        isFacingRight = !isFacingRight;
+        transform.Rotate(0, 180, 0);
     }
     void checkIfFalling()
     {
@@ -148,13 +155,18 @@ public class HeroController : MonoBehaviour
             isJumping = true;
             isFalling = false;
         } 
+        else if(yVelocity == 0)
+        {
+            isJumping = false;
+            isFalling = false;
+        }
     }
     void groundCheck()
     {
         RaycastHit2D groundLineCast = Physics2D.Linecast(transform.position, groundCheckPlaceholder.position, 1 << LayerMask.NameToLayer("Ground"));
-        RaycastHit2D stoneLineCast = Physics2D.Linecast(transform.position, groundCheckPlaceholder.position, 1 << LayerMask.NameToLayer("Stone"));
+        RaycastHit2D stoneLineCast = Physics2D.Linecast(transform.position, groundCheckPlaceholder.position, 1 << LayerMask.NameToLayer("Wall"));
 
-        if (groundLineCast || stoneLineCast)
+        if (groundLineCast == true || stoneLineCast == true)
         {
             isGrounded = true;
         }
@@ -176,21 +188,57 @@ public class HeroController : MonoBehaviour
             heroBody2D.velocity = new Vector2(heroBody2D.velocity.x, heroBody2D.velocity.y * .5f); // half jump
         }
     }
+    void handleWallJump()
+    {
+        if(checkObjectinFront() == true && !isGrounded && xHorizontal !=0) // if a wall is infront of you and you are not in the ground and you are pushing left or right.
+        {
+            isWallSliding = true;
+            jumpTime = Time.time + wallJumpTime; // creates a timer, jump time is equal to the current time + wallJumpTime.
 
+        } else if(jumpTime < Time.time)
+        {
+            isWallSliding = false;
+        }
+
+        if (isWallSliding)
+        {
+            heroBody2D.velocity = new Vector2(heroBody2D.velocity.x, Mathf.Clamp(heroBody2D.velocity.y, wallSlideSpeed, float.MaxValue));
+
+        }
+    }
     bool checkObjectinFront()
     {
         isTouchingWall = Physics2D.OverlapBox(wallCheck.position, wallCheckSize, 0, wallLayer); // makes a box that will check whats in front
 
         return isTouchingWall;
     }
+   
 
-    void flip()
+
+    void Start()
     {
-        isFacingRight = !isFacingRight;
-        transform.Rotate(0, 180 , 0);
+        attackCollider.enabled = false;
+        animator = GetComponent<Animator>();
+        heroBody2D = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        baseScale = transform.localScale;
     }
-
-
+    void Update()
+    {
+        jumpCheck();
+        groundCheck();
+        animationControl();
+        checkIfFalling();
+        checkObjectinFront();
+        handleDirection();
+        handleWallJump();
+        handleSwordAttack();
+    }
+    private void FixedUpdate()
+    {
+        handleMovement();
+        handleJumping();
+    }
     private void OnDrawGizmosSelected()
     {
         Gizmos.DrawCube(wallCheck.position, wallCheckSize);
