@@ -31,7 +31,12 @@ public class HeroController : MonoBehaviour
     private float jumpTime;
     private bool isWallSliding = false;
     private bool isAttacking;
-    float xHorizontal;
+    private float xHorizontal;
+    private bool isHit;
+    private bool dead;
+    private bool hitCheck;
+
+    public float health;
 
     Animator animator;
     Rigidbody2D heroBody2D;
@@ -39,6 +44,24 @@ public class HeroController : MonoBehaviour
     Vector3 baseScale;
 
 
+    void handleDeath()
+    {
+        if (health <= 0)
+        {
+            dead = true;
+            animator.Play("hero_die");
+            StartCoroutine("destroyHero");
+        }
+    }
+    void handleHealth()
+    {
+        if (isHit == true && hitCheck == false)
+        {
+            health -= 1;
+            hitCheck = true;
+            StartCoroutine("hitCheckReset");
+        }
+    }
     void handleSwordAttack()
     {
         if (Input.GetKeyDown("mouse 0"))
@@ -77,10 +100,26 @@ public class HeroController : MonoBehaviour
     }
     IEnumerator resetSwordAttack()
     {
-        yield return new WaitForSeconds(.1f);
+        yield return new WaitForSeconds(.2f);
         isAttacking = false;
         attackCollider.enabled = false;
 
+    }
+    IEnumerator destroyHero()
+    {
+        yield return new WaitForSeconds(.5f);
+        Destroy(gameObject);
+    }
+    IEnumerator hitCheckReset()
+    {
+        yield return new WaitForSeconds(.5f);
+        hitCheck = false;
+    }
+
+    IEnumerator resetHit()
+    {
+        yield return new WaitForSeconds(1f);
+        isHit = false;
     }
     void animationControl()
     {
@@ -122,6 +161,12 @@ public class HeroController : MonoBehaviour
         if (isWallSliding)
         {
             animator.Play("hero_idle");
+        }
+
+        if(isHit && !dead)
+        {
+            animator.Play("hero_hit");
+            StartCoroutine("resetHit");
         }
     }
     void handleDirection()
@@ -212,7 +257,15 @@ public class HeroController : MonoBehaviour
 
         return isTouchingWall;
     }
-   
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if(collision.collider.CompareTag("Mushroom"))
+        {
+            isHit = true;
+        }
+    }
+
 
 
     void Start()

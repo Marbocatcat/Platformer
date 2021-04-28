@@ -13,8 +13,21 @@ public class Mushroom : MonoBehaviour
     [SerializeField] LayerMask wallLayer;
     private bool isTouchingWall;
 
-    private bool isFacingRight = true;
+    [Header("Ground Check")]
+    [SerializeField] Transform groundCheck;
+    [SerializeField] float radius;
+    [SerializeField] LayerMask groundLayer;
+    private bool isTouchingGround;
 
+    private bool isFacingRight = true;
+    private bool isHit;
+    private float staggerJump = .5f;
+    private bool hitCheck;
+
+    public float health;
+    private bool dead;
+
+    Animator animator;
     Rigidbody2D mushroomRigidBody;
 
     
@@ -22,6 +35,7 @@ public class Mushroom : MonoBehaviour
     void Start()
     {
         mushroomRigidBody = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
     }
     bool checkObjectinFront()
     {
@@ -29,21 +43,32 @@ public class Mushroom : MonoBehaviour
 
         return isTouchingWall;
     }
+
+    bool checkGround()
+    {
+        isTouchingGround = Physics2D.OverlapCircle(groundCheck.transform.position, radius, groundLayer);
+
+        return isTouchingGround;
+    }
     void handleMoving()
     {
-        if(isFacingRight)
+        if(isFacingRight && !isHit && !dead)
         {
             mushroomRigidBody.velocity = new Vector2(speed, mushroomRigidBody.velocity.y);
         }
-        else if(!isFacingRight)
+        else if(!isFacingRight && !isHit && !dead)
         {
             mushroomRigidBody.velocity = new Vector2(-speed, mushroomRigidBody.velocity.y);
+        }
+        else if(isHit)
+        {
+            mushroomRigidBody.velocity = Vector2.zero;
         }
        
     }
     void handleDirection()
     {
-        if(checkObjectinFront())
+        if(checkObjectinFront() || isTouchingGround == false)
         {
             if(isFacingRight)
             {
@@ -56,25 +81,89 @@ public class Mushroom : MonoBehaviour
         }
  
     }
-
+    
+    void handleDeath()
+    {
+        if(health <= 0)
+        {
+            dead = true;
+            animator.Play("mushroom_die");
+            StartCoroutine("destroyMushroom");
+        }
+    }
+    void handleHealth()
+    {
+        if(isHit == true && hitCheck == false)
+        {
+            health-=1;
+            hitCheck = true;
+            StartCoroutine("hitCheckReset");
+        }
+    }
     void flip()
     {
         isFacingRight = !isFacingRight;
         transform.Rotate(0, 180, 0);
+    }
+    void handleAnimation()
+    {
+        if(isHit && !dead)
+        {
+            
+            animator.Play("mushroom_hit");
+            StartCoroutine("resetHit");
+            
+        }
+        else if(!isHit && !dead)
+        {
+            animator.Play("mushroom_walk");
+        }
+    }
+
+    IEnumerator destroyMushroom()
+    {
+        yield return new WaitForSeconds(.3f);
+        Destroy(gameObject);
+    }
+
+    IEnumerator resetHit()
+    {
+        yield return new WaitForSeconds(.2f);
+        isHit = false;
+    }
+
+  
+    IEnumerator hitCheckReset()
+    {
+        yield return new WaitForSeconds(.5f);
+        hitCheck = false;
     }
 
     // Update is called once per frame
     void Update()
     {
         checkObjectinFront();
+        checkGround();
         handleDirection();
+        handleAnimation();
         handleMoving();
+        handleDeath();
+        handleHealth();
 
-        Debug.Log(checkObjectinFront());
+
     }
 
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.collider.CompareTag("Sword"))
+        {
+            isHit = true;
+        }
+    }
     private void OnDrawGizmosSelected()
     {
         Gizmos.DrawCube(wallCheck.position, wallCheckSize);
+
+        Gizmos.DrawWireSphere(groundCheck.transform.position, radius);
     }
 }
