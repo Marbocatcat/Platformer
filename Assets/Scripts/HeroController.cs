@@ -74,17 +74,34 @@ public class HeroController : MonoBehaviour
     void handleMovement()
     {
         xHorizontal = Input.GetAxisRaw("Horizontal");
-        heroBody2D.velocity = new Vector2(xHorizontal * speed, heroBody2D.velocity.y);
 
-        if(xHorizontal != 0)
+        if(xHorizontal != 0 && !isHit)
         {
+            heroBody2D.velocity = new Vector2(xHorizontal * speed, heroBody2D.velocity.y);
             isMoving = true;
         }
         else if(xHorizontal == 0)
         {
+            heroBody2D.velocity = new Vector2(xHorizontal * speed, heroBody2D.velocity.y);
             isMoving = false;
         }
+        
+        if(isHit)
+        {
+            if(isFacingRight)
+            {
+                heroBody2D.AddForce(new Vector2(-1, .5f), ForceMode2D.Impulse);
+            }
+            else if(!isFacingRight)
+            {
+                heroBody2D.velocity = new Vector2(1, .5f);
+            }
+        }
 
+        if(dead)
+        {
+            heroBody2D.velocity = Vector2.zero;
+        }
 
     }
     void handleJumping()
@@ -107,7 +124,7 @@ public class HeroController : MonoBehaviour
     }
     IEnumerator destroyHero()
     {
-        yield return new WaitForSeconds(.5f);
+        yield return new WaitForSeconds(1f);
         Destroy(gameObject);
     }
     IEnumerator hitCheckReset()
@@ -118,12 +135,12 @@ public class HeroController : MonoBehaviour
 
     IEnumerator resetHit()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(.5f);
         isHit = false;
     }
     void animationControl()
     {
-        if (isMoving && isGrounded && !isAttacking)
+        if (isMoving && isGrounded && !isAttacking && !isHit &&!dead)
         {
             if (isTouchingWall)
             {
@@ -134,19 +151,19 @@ public class HeroController : MonoBehaviour
                 animator.Play("hero_run");
             }
         }
-        if (isAttacking)
+        if (isAttacking && !isHit &&!dead)
         {
             animator.Play("hero_sword_attack");
             StartCoroutine("resetSwordAttack");
         }
 
-        if (!isMoving && isGrounded && !isAttacking)
+        if (!isMoving && isGrounded && !isAttacking && !isHit &&!dead)
         {
             animator.Play("hero_idle");
         }
 
 
-        if (!isGrounded && !isWallSliding)
+        if (!isGrounded && !isWallSliding && !isHit &&!dead)
         {
             if (isJumping && !isAttacking)
             {
@@ -266,8 +283,6 @@ public class HeroController : MonoBehaviour
         }
     }
 
-
-
     void Start()
     {
         attackCollider.enabled = false;
@@ -286,6 +301,11 @@ public class HeroController : MonoBehaviour
         handleDirection();
         handleWallJump();
         handleSwordAttack();
+        handleDeath();
+        handleHealth();
+
+        Debug.Log(health);
+
     }
     private void FixedUpdate()
     {
