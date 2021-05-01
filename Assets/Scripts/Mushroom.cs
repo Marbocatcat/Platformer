@@ -19,11 +19,13 @@ public class Mushroom : MonoBehaviour
     [SerializeField] LayerMask groundLayer;
     private bool isTouchingGround;
 
+
     private bool isFacingRight = true;
     private bool isHit;
     private float staggerJump = .5f;
     private bool hitCheck;
 
+    public GameObject coin;
     public float health;
     private bool dead;
 
@@ -81,6 +83,11 @@ public class Mushroom : MonoBehaviour
         }
  
     }
+
+    void spitOutCoin()
+    {
+        GameObject coinOut = (GameObject)Instantiate(coin, new Vector3(transform.position.x, transform.position.y + .5f, 0) , transform.rotation);
+    }
     
     void handleDeath()
     {
@@ -122,12 +129,16 @@ public class Mushroom : MonoBehaviour
 
     IEnumerator destroyMushroom()
     {
+        // Destroy the Mushroom after wait for seconds and then spit out a coin drop.
         yield return new WaitForSeconds(.3f);
         Destroy(gameObject);
+        
+        spitOutCoin();
     }
 
     IEnumerator resetHit()
     {
+        // reset hit back to false after .2f 
         yield return new WaitForSeconds(.2f);
         isHit = false;
     }

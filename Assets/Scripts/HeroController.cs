@@ -24,6 +24,7 @@ public class HeroController : MonoBehaviour
 
     [Header("Attack Check")]
     [SerializeField] BoxCollider2D attackCollider;
+    [SerializeField] Animation hitSparkle;
 
     [Header("Wall Jump")]
     [SerializeField] float wallJumpTime;
@@ -37,7 +38,9 @@ public class HeroController : MonoBehaviour
     private bool hitCheck;
 
     public float health;
+    private bool isJumpAudioPlayed;
 
+    AudioSource jumpAudio;
     Animator animator;
     Rigidbody2D heroBody2D;
     SpriteRenderer spriteRenderer;
@@ -111,6 +114,12 @@ public class HeroController : MonoBehaviour
             heroBody2D.AddForce(new Vector2(heroBody2D.velocity.x, jumpForce), ForceMode2D.Impulse);
             canJump = false;
 
+            if(!isJumpAudioPlayed)
+            {
+                jumpAudio.Play();
+                isJumpAudioPlayed = true;
+            }
+
         }
 
 
@@ -167,11 +176,14 @@ public class HeroController : MonoBehaviour
         {
             if (isJumping && !isAttacking)
             {
+              
+                
                 animator.Play("hero_jump");
             }
             else if (isFalling && !isAttacking)
             {
                 animator.Play("hero_falling");
+                isJumpAudioPlayed = false;
             }
         }
 
@@ -289,6 +301,7 @@ public class HeroController : MonoBehaviour
         animator = GetComponent<Animator>();
         heroBody2D = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
+        jumpAudio = GetComponent<AudioSource>();
         baseScale = transform.localScale;
     }
     void Update()
@@ -303,8 +316,6 @@ public class HeroController : MonoBehaviour
         handleSwordAttack();
         handleDeath();
         handleHealth();
-
-        Debug.Log(health);
 
     }
     private void FixedUpdate()
