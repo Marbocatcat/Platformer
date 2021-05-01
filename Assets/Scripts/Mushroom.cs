@@ -29,7 +29,6 @@ public class Mushroom : MonoBehaviour
     public float health;
     private bool dead;
 
-    public AudioClip attackAudioClip;
     public AudioClip mushroomDeath;
 
 
@@ -37,16 +36,16 @@ public class Mushroom : MonoBehaviour
     private bool isAttackAudioPlayed;
 
     Animator animator;
-    AudioSource audioSource;
     Rigidbody2D mushroomRigidBody;
 
+    private SoundManager soundManager;
     
     // Start is called before the first frame update
     void Start()
     {
         mushroomRigidBody = GetComponent<Rigidbody2D>();
-        audioSource = GetComponent<AudioSource>();
         animator = GetComponent<Animator>();
+        soundManager = FindObjectOfType<SoundManager>();
         
     }
     bool checkObjectinFront()
@@ -108,7 +107,7 @@ public class Mushroom : MonoBehaviour
 
             if(!isMushroomDeathAudioPlayed)
             {
-                audioSource.PlayOneShot(mushroomDeath);
+                soundManager.mushroomDeath.Play();
                 isMushroomDeathAudioPlayed = true;
             }
             
@@ -135,11 +134,11 @@ public class Mushroom : MonoBehaviour
         {
             if(isAttackAudioPlayed == false)
             {
-                audioSource.Play();
+                soundManager.damageClip.Play();
                 isAttackAudioPlayed = true;
             }
-            animator.Play("mushroom_hit");
-            StartCoroutine("resetHit");
+        animator.Play("mushroom_hit");
+        StartCoroutine("resetHit");
             
         }
         else if(!isHit && !dead)

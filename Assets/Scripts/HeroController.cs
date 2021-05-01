@@ -42,8 +42,9 @@ public class HeroController : MonoBehaviour
 
     
     private bool isJumpAudioPlayed;
-    
 
+
+    SoundManager soundManager;
     AudioSource jumpAudio;
     Animator animator;
     Rigidbody2D heroBody2D;
@@ -120,7 +121,7 @@ public class HeroController : MonoBehaviour
 
             if(!isJumpAudioPlayed)
             {
-                jumpAudio.Play();
+                soundManager.heroJump.Play();
                 isJumpAudioPlayed = true;
             }
 
@@ -175,13 +176,11 @@ public class HeroController : MonoBehaviour
             animator.Play("hero_idle");
         }
 
-
         if (!isGrounded && !isWallSliding && !isHit &&!dead)
         {
             if (isJumping && !isAttacking)
             {
-              
-                
+
                 animator.Play("hero_jump");
             }
             else if (isFalling && !isAttacking)
@@ -302,6 +301,7 @@ public class HeroController : MonoBehaviour
     void Start()
     {
         attackCollider.enabled = false;
+        soundManager = FindObjectOfType<SoundManager>();
         animator = GetComponent<Animator>();
         heroBody2D = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();

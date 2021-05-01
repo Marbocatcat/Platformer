@@ -5,14 +5,16 @@ using UnityEngine;
 public class Collectible : MonoBehaviour
 {
     private bool pickedUp;
-    AudioSource potionAudio;
+
+    private SoundManager soundManager;
+    private Animator animator;
 
     bool isAudioPlayed;
 
-
     void Start()
     {
-        potionAudio = GetComponent<AudioSource>();
+        soundManager = FindObjectOfType<SoundManager>();
+        animator = GetComponent<Animator>();
         floatUp();
     }
 
@@ -27,24 +29,47 @@ public class Collectible : MonoBehaviour
         // offsets the coin a bit higher when dropped.
         transform.position = new Vector2(transform.position.x, transform.position.y - .3f);
     }
-
     void handleAnimation()
     {
         if (pickedUp)
         {
-            handlePotionSound();
-            Destroy(gameObject, .5f);
+            if(this.CompareTag("Coin"))
+            {
+                
+                animator.Play("coin_pickup");
+                Destroy(gameObject, .5f);
+            }
+            else if(this.CompareTag("Potion"))
+            {
+                
+                Destroy(gameObject, .5f);
+            }
+
+            handleSound();
         }
 
     }
 
-    void handlePotionSound()
+    void handleSound()
     {
-        if(!isAudioPlayed)
+        if(this.CompareTag("Coin"))
         {
-            potionAudio.Play();
-            isAudioPlayed = true;
+            if (!isAudioPlayed)
+            {
+                soundManager.coinPickup.Play();
+                isAudioPlayed = true;
+            }
         }
+
+        else if(this.CompareTag("Potion"))
+        {
+            if(!isAudioPlayed)
+            {
+                soundManager.healthPotionPickup.Play();
+                isAudioPlayed = true;
+            }
+        }
+       
         
     }
 
