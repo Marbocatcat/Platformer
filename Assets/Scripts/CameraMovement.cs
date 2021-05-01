@@ -11,6 +11,7 @@ public class CameraMovement : MonoBehaviour
     [SerializeField]
     Vector2 posOffset;
 
+
     // Update is called once per frame
     void Update()
     {

@@ -29,7 +29,15 @@ public class Mushroom : MonoBehaviour
     public float health;
     private bool dead;
 
+    public AudioClip attackAudioClip;
+    public AudioClip mushroomDeath;
+
+
+    private bool isMushroomDeathAudioPlayed;
+    private bool isAttackAudioPlayed;
+
     Animator animator;
+    AudioSource audioSource;
     Rigidbody2D mushroomRigidBody;
 
     
@@ -37,7 +45,9 @@ public class Mushroom : MonoBehaviour
     void Start()
     {
         mushroomRigidBody = GetComponent<Rigidbody2D>();
+        audioSource = GetComponent<AudioSource>();
         animator = GetComponent<Animator>();
+        
     }
     bool checkObjectinFront()
     {
@@ -95,6 +105,13 @@ public class Mushroom : MonoBehaviour
         {
             dead = true;
             animator.Play("mushroom_die");
+
+            if(!isMushroomDeathAudioPlayed)
+            {
+                audioSource.PlayOneShot(mushroomDeath);
+                isMushroomDeathAudioPlayed = true;
+            }
+            
             StartCoroutine("destroyMushroom");
         }
     }
@@ -116,7 +133,11 @@ public class Mushroom : MonoBehaviour
     {
         if(isHit && !dead)
         {
-            
+            if(isAttackAudioPlayed == false)
+            {
+                audioSource.Play();
+                isAttackAudioPlayed = true;
+            }
             animator.Play("mushroom_hit");
             StartCoroutine("resetHit");
             
@@ -131,8 +152,9 @@ public class Mushroom : MonoBehaviour
     {
         // Destroy the Mushroom after wait for seconds and then spit out a coin drop.
         yield return new WaitForSeconds(.3f);
+
         Destroy(gameObject);
-        
+        isMushroomDeathAudioPlayed = false;
         spitOutCoin();
     }
 
@@ -140,6 +162,7 @@ public class Mushroom : MonoBehaviour
     {
         // reset hit back to false after .2f 
         yield return new WaitForSeconds(.2f);
+        isAttackAudioPlayed = false;
         isHit = false;
     }
 

@@ -38,7 +38,11 @@ public class HeroController : MonoBehaviour
     private bool hitCheck;
 
     public float health;
+
+
+    
     private bool isJumpAudioPlayed;
+    
 
     AudioSource jumpAudio;
     Animator animator;
@@ -161,7 +165,7 @@ public class HeroController : MonoBehaviour
             }
         }
         if (isAttacking && !isHit &&!dead)
-        {
+        {            
             animator.Play("hero_sword_attack");
             StartCoroutine("resetSwordAttack");
         }
